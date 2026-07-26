@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>宁波租房地图</title>
+
+  <!-- Leaflet 地图 CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
+
+  <!-- 自定义样式 -->
+  <link rel="stylesheet" href="css/style.css">
+
+  <style>
+    /* 页面加载时的初始 loading 状态 */
+    .loading-indicator {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      text-align: center; color: var(--color-text-secondary); z-index: 500;
+    }
+    .loading-indicator .spinner {
+      width: 40px; height: 40px; margin: 0 auto 12px;
+      border: 3px solid var(--color-border); border-top-color: var(--color-primary);
+      border-radius: 50%; animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <!-- ==================== 导航栏 ==================== -->
+  <nav class="navbar">
+    <div class="navbar-title">
+      <span class="icon">🏠</span>
+      <span>宁波租房地图</span>
+    </div>
+    <div class="navbar-auth" id="navbar-auth">
+      <button class="btn btn-outline btn-sm" onclick="Auth.showModal('login')">登录</button>
+      <button class="btn btn-primary btn-sm" onclick="Auth.showModal('register')">注册</button>
+    </div>
+  </nav>
+
+  <!-- ==================== 主布局 ==================== -->
+  <div class="main-container">
+    <!-- 地图 -->
+    <div class="map-wrapper">
+      <div id="map">
+        <div class="loading-indicator" id="map-loading">
+          <div class="spinner"></div>
+          <div>加载地图中...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 房源列表侧边栏 -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h3>📋 房源列表</h3>
+        <span class="sidebar-count" id="sidebar-count">加载中...</span>
+      </div>
+      <div class="sidebar-list" id="sidebar-list">
+        <div class="review-empty">正在加载房源数据...</div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- ==================== 登录/注册弹窗 ==================== -->
+  <div class="modal-overlay" id="auth-modal-overlay">
+    <div class="modal modal-sm" id="auth-modal">
+      <div class="modal-body" id="auth-modal-body"></div>
+    </div>
+  </div>
+
+  <!-- ==================== 房源详情弹窗 ==================== -->
+  <div class="modal-overlay" id="detail-modal-overlay">
+    <div class="modal modal-lg" id="detail-modal">
+      <div class="modal-body" id="detail-modal-body"></div>
+    </div>
+  </div>
+
+  <!-- ==================== JavaScript（按依赖顺序加载） ==================== -->
+
+  <!-- 1. 地图库 Leaflet（jsdelivr CDN，国内可用） -->
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- 2. Supabase SDK（必须同步加载，在 config.js 之前） -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- 3. 项目模块 -->
+  <script src="js/config.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/seed-data.js"></script>
+  <script src="js/data-store.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/map.js"></script>
+  <script src="js/listings.js"></script>
+
+  <!-- 4. 应用初始化 -->
+  <script>
+    (async function initApp() {
+      try {
+        // 检查 Supabase SDK（仅在 Supabase 模式时需要）
+        if (CONFIG.USE_SUPABASE && !window.supabase) {
+          throw new Error('Supabase SDK 未加载，请检查网络连接。或切换回本地模式：js/config.js 中设置 USE_SUPABASE = false');
+        }
+
+        // 隐藏 loading
+        const hideLoading = () => {
+          const el = document.getElementById('map-loading');
+          if (el) el.style.display = 'none';
+        };
+
+        // 初始化认证
+        await Auth.init();
+
+        // 初始化地图
+        MapModule.init();
+        hideLoading();
+
+        // 加载房源列表到侧边栏
+        const listings = await DataStore.getListings();
+        ListingsModule.renderSidebar(listings);
+
+        // 监听认证变化，刷新列表
+        Auth.onAuthChange(() => {
+          DataStore.getListings().then(l => ListingsModule.renderSidebar(l));
+        });
+
+        console.log('✅ 宁波租房地图初始化完成！');
+        console.log(`   - ${listings.length} 条房源已加载`);
+        console.log(`   - 覆盖区域：${[...new Set(listings.map(l => l.district))].join('、')}`);
+        console.log(`   - 模式：${CONFIG.USE_SUPABASE ? '☁️ Supabase 云端（多人共享）' : '💻 本地模式（单机演示）'}`);
+
+      } catch (err) {
+        console.error('初始化失败：', err);
+        document.getElementById('map-loading').innerHTML =
+          '<div style="color:var(--color-danger);">⚠️ 加载失败<br><small>' + err.message + '</small></div>';
+      }
+    })();
+  </script>
+</body>
+</html>
