@@ -530,5 +530,12 @@ const MOCK_LISTINGS = [
   },
 ];
 
+// 兼容字段：为所有 mock 数据添加 status, submitted_by, created_at
+MOCK_LISTINGS.forEach(l => {
+  if (!l.status) l.status = 'approved';
+  if (!l.submitted_by) l.submitted_by = null;
+  if (!l.created_at) l.created_at = '2024-07-01';
+});
+
 // 如果数据加载成功
 console.log(`✅ 已加载 ${MOCK_LISTINGS.length} 条宁波房源示例数据`);

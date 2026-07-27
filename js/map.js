@@ -112,5 +112,58 @@ const MapModule = (() => {
     }
   }
 
-  return { init, loadMarkers, flyToListing, flyToDistrict };
+  // ==================== 地图选点模式 ====================
+
+  let pickCallback = null;
+  let pickHint = null;
+  let pickMarker = null;
+
+  function getMap() {
+    return map;
+  }
+
+  function enablePickMode(callback) {
+    if (!map) return;
+    pickCallback = callback;
+
+    // 改变光标
+    document.getElementById('map').style.cursor = 'crosshair';
+
+    // 显示提示条
+    pickHint = document.createElement('div');
+    pickHint.style.cssText = `
+      position:absolute;top:16px;left:50%;transform:translateX(-50%);z-index:1000;
+      background:var(--color-primary);color:#fff;padding:10px 24px;border-radius:8px;
+      font-size:0.9rem;font-weight:500;box-shadow:0 4px 12px rgba(0,0,0,0.3);
+      pointer-events:none;white-space:nowrap;
+    `;
+    pickHint.textContent = '📍 请在地图上点击房源位置（按 Esc 取消）';
+    document.getElementById('map').appendChild(pickHint);
+
+    // 添加点击监听
+    map.once('click', function(e) {
+      if (pickMarker) map.removeLayer(pickMarker);
+      disablePickMode();
+      callback({ lat: e.latlng.lat, lng: e.latlng.lng });
+    });
+
+    // ESC 取消
+    function onEsc(e) {
+      if (e.key === 'Escape') {
+        disablePickMode();
+        document.removeEventListener('keydown', onEsc);
+      }
+    }
+    document.addEventListener('keydown', onEsc);
+  }
+
+  function disablePickMode() {
+    if (!map) return;
+    document.getElementById('map').style.cursor = '';
+    if (pickHint) { pickHint.remove(); pickHint = null; }
+    pickCallback = null;
+  }
+
+  return { init, loadMarkers, flyToListing, flyToDistrict, getMap,
+           enablePickMode, disablePickMode };
 })();

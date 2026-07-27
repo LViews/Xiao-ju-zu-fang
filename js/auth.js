@@ -153,6 +153,13 @@ const Auth = (() => {
     return !!getUser();
   }
 
+  function isAdmin() {
+    const user = getUser();
+    if (!user) return false;
+    const email = (user.email || '').toLowerCase();
+    return CONFIG.ADMIN_EMAILS.some(e => e.toLowerCase() === email);
+  }
+
   function onAuthChange(callback) {
     changeCallbacks.push(callback);
   }
@@ -173,6 +180,7 @@ const Auth = (() => {
     if (user) {
       authEl.innerHTML = `
         <div class="navbar-user">
+          <button class="btn btn-primary btn-sm" onclick="UploadModule.showModal()" style="margin-right:8px;">📤 发布房源</button>
           <span class="user-email">👤 ${escapeHtml(user.email)}</span>
           <button class="btn btn-outline btn-sm" onclick="Auth.signOut()">退出</button>
         </div>
@@ -280,6 +288,6 @@ const Auth = (() => {
     notifyChange();
   }
 
-  return { init, signUp, signIn, signOut, getUser, isLoggedIn, onAuthChange,
+  return { init, signUp, signIn, signOut, getUser, isLoggedIn, isAdmin, onAuthChange,
            showModal, closeModal, handleSubmit };
 })();

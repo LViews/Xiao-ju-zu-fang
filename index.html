@@ -77,6 +77,13 @@
     </div>
   </div>
 
+  <!-- ==================== 发布房源弹窗 ==================== -->
+  <div class="modal-overlay" id="upload-modal-overlay">
+    <div class="modal modal-lg" id="upload-modal">
+      <div class="modal-body" id="upload-modal-body"></div>
+    </div>
+  </div>
+
   <!-- ==================== JavaScript（按依赖顺序加载） ==================== -->
 
   <!-- 1. 地图库 Leaflet（jsdelivr CDN，国内可用） -->
@@ -93,6 +100,7 @@
   <script src="js/auth.js"></script>
   <script src="js/map.js"></script>
   <script src="js/listings.js"></script>
+  <script src="js/upload.js"></script>
 
   <!-- 4. 应用初始化 -->
   <script>
@@ -120,10 +128,16 @@
         const listings = await DataStore.getListings();
         ListingsModule.renderSidebar(listings);
 
-        // 监听认证变化，刷新列表
+        // 监听认证变化，刷新列表和审核面板
         Auth.onAuthChange(() => {
-          DataStore.getListings().then(l => ListingsModule.renderSidebar(l));
+          DataStore.getListings().then(l => {
+            ListingsModule.renderSidebar(l);
+            UploadModule.renderAdminPanel();
+          });
         });
+
+        // 初始加载审核面板
+        UploadModule.renderAdminPanel();
 
         console.log('✅ 宁波租房地图初始化完成！');
         console.log(`   - ${listings.length} 条房源已加载`);

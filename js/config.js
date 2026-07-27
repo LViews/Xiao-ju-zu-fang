@@ -24,6 +24,12 @@ const CONFIG = {
   MAP_CENTER: [29.86, 121.54],
   MAP_ZOOM: 12,
 
+  // 管理员邮箱列表（用于审核房源提交）
+  ADMIN_EMAILS: ['admin@example.com'],
+
+  // 去重距离阈值（米），新提交房源与已有房源在此距离内且标题相似时提示重复
+  DEDUP_DISTANCE_METERS: 200,
+
   // 宁波各区中心坐标
   DISTRICTS: {
     '海曙区': [29.872, 121.535],
